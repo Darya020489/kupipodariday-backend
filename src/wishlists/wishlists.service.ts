@@ -46,7 +46,7 @@ export class WishlistsService {
       relations: ["owner", "items"],
     });
     if (!currentWishlist) {
-      throw new ServerException(ErrorCode.NotFound);
+      throw new ServerException(ErrorCode.WishlistNotFound);
     }
     return currentWishlist;
   }
@@ -58,7 +58,7 @@ export class WishlistsService {
   ): Promise<void> {
     const currentWishlist = await this.findWishlistById(wishlistId);
     if (userId !== currentWishlist.owner.id) {
-      throw new ServerException(ErrorCode.Forbidden);
+      throw new ServerException(ErrorCode.UpdateForbidden);
     }
     const newWishlist = await this.wishlistsRepository.update(
       wishlistId,
@@ -76,7 +76,7 @@ export class WishlistsService {
   ): Promise<Wishlist> {
     const currentWishlist = await this.findWishlistById(wishlistId);
     if (userId !== currentWishlist.owner.id) {
-      throw new ServerException(ErrorCode.Forbidden);
+      throw new ServerException(ErrorCode.DeleteForbidden);
     }
     await this.wishlistsRepository.delete({
       id: wishlistId,

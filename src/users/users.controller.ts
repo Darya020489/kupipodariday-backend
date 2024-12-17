@@ -43,7 +43,7 @@ export class UsersController {
       },
     });
     if (!currentUser) {
-      throw new ServerException(ErrorCode.NotFound);
+      throw new ServerException(ErrorCode.UserNotFound);
     }
     return currentUser;
   }
@@ -71,14 +71,14 @@ export class UsersController {
   async getUser(@Param("username") username: string): Promise<User> {
     const currentUser = await this.usersService.getUserByName(username);
     if (!currentUser) {
-      throw new ServerException(ErrorCode.NotFound);
+      throw new ServerException(ErrorCode.UserNotFound);
     }
     return currentUser;
   }
 
   @Get(":username/wishes")
   async getUserWishes(@Param("username") username: string): Promise<Wish[]> {
-    const userWishes = await this.wishesService.getUserWishes(username);
+    const userWishes = await this.wishesService.findWishesByUsername(username);
     return userWishes;
   }
 
@@ -86,7 +86,7 @@ export class UsersController {
   async findUsers(@Body("query") query: string): Promise<User[]> {
     const users = await this.usersService.findMany(query);
     if (!users) {
-      throw new ServerException(ErrorCode.NotFound);
+      throw new ServerException(ErrorCode.UserNotFound);
     }
     return users;
   }

@@ -1,7 +1,13 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { User } from "./entities/user.entity";
-import { FindOneOptions, Like, QueryFailedError, Repository } from "typeorm";
+import {
+  FindOneOptions,
+  Like,
+  Not,
+  QueryFailedError,
+  Repository,
+} from "typeorm";
 import { hashValue } from "src/helpers/hash";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
@@ -44,12 +50,28 @@ export class UsersService {
   }
 
   async updateUser(id: number, updateUserDto: UpdateUserDto): Promise<User> {
-    const { password } = updateUserDto;
-    const user = await this.findById(id);
-    if (password) {
-      updateUserDto.password = await hashValue(password);
+    try {
+      const { username, email, password } = updateUserDto;
+      if (username || email) {
+        const userAlreadyExists = await this.usersRepository.find({
+          where: [
+            username ? { username, id: Not(id) } : undefined,
+            email ? { email, id: Not(id) } : undefined,
+          ],
+        });
+        // console.log(userAlreadyExists, "userAlreadyExists");
+        if (userAlreadyExists.length) {
+          throw new ServerException(ErrorCode.UserAlreadyExists);
+        }
+      }
+      const user = await this.findById(id);
+      if (password) {
+        updateUserDto.password = await hashValue(password);
+      }
+      return this.usersRepository.save({ ...user, ...updateUserDto });
+    } catch (err) {
+      throw err;
     }
-    return this.usersRepository.save({ ...user, ...updateUserDto });
   }
 
   async getUserByName(username: string): Promise<User> {

@@ -30,13 +30,13 @@ export class OffersService {
         createOfferDto.itemId,
       );
       if (userId === currentWish.owner.id) {
-        throw new ServerException(ErrorCode.Forbidden);
+        throw new ServerException(ErrorCode.OfferForbidden);
       }
       const newRaisedSum = Number(
         (currentWish.raised + createOfferDto.amount).toFixed(2),
       );
       if (newRaisedSum > currentWish.price) {
-        throw new ServerException(ErrorCode.Forbidden);
+        throw new ServerException(ErrorCode.RaisedForbidden);
       }
       const currentUser = await this.usersService.findById(userId);
       await this.wishesService.updateWishRaised(

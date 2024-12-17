@@ -39,7 +39,7 @@ export class WishesService {
     return wishes;
   }
 
-  async getUserWishes(username: string): Promise<Wish[]> {
+  async findWishesByUsername(username: string): Promise<Wish[]> {
     const wishes = await this.wishesRepository.findBy({ owner: { username } });
     return wishes;
   }
@@ -73,7 +73,7 @@ export class WishesService {
       relations: ["owner", "offers", "offers.user"],
     });
     if (!wish) {
-      throw new ServerException(ErrorCode.NotFound);
+      throw new ServerException(ErrorCode.WishNotFound);
     }
     return wish;
   }
@@ -101,8 +101,11 @@ export class WishesService {
     userId: number,
   ): Promise<void> {
     const wish = await this.findWishById(wishId);
-    if (userId !== wish.owner.id || (updateData.price && wish.raised)) {
-      throw new ServerException(ErrorCode.Forbidden);
+    if (userId !== wish.owner.id) {
+      throw new ServerException(ErrorCode.UpdateWishForbidden);
+    }
+    if (updateData.price && wish.raised) {
+      throw new ServerException(ErrorCode.UpdateRaisedForbidden);
     }
     const newWish = await this.wishesRepository.update(wishId, updateData);
     if (newWish.affected === 0) {
@@ -124,7 +127,7 @@ export class WishesService {
   async removeWishById(wishId: number, userId: number): Promise<Wish> {
     const wish = await this.findWishById(wishId);
     if (userId !== wish.owner.id) {
-      throw new ServerException(ErrorCode.Forbidden);
+      throw new ServerException(ErrorCode.DeleteWishForbidden);
     }
     await this.wishesRepository.delete({ id: wishId });
     return wish;
@@ -137,14 +140,14 @@ export class WishesService {
     try {
       const oldWish = await this.findWishById(wishId);
       if (userId === oldWish.owner.id) {
-        throw new ServerException(ErrorCode.Forbidden);
+        throw new ServerException(ErrorCode.CopyForbidden);
       }
       const userWishesNames = (await this.findWishesByUserId(userId)).map(
         (wish) => wish.name,
       );
       // console.log(userWishesNames, "userWishesNames");
       if (userWishesNames.includes(oldWish.name)) {
-        throw new ServerException(ErrorCode.Forbidden);
+        throw new ServerException(ErrorCode.AlreadyCopied);
       }
       const { name, link, image, description, price } = oldWish;
       const newWish = await this.createWish(

@@ -1,4 +1,4 @@
-import * as bcrypt from "bcrypt";
+import * as bcrypt from "bcryptjs";
 
 export function hashValue(value: string) {
   return bcrypt.hash(value, 10);
